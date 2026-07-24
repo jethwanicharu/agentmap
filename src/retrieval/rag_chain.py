@@ -57,7 +57,7 @@ def ask_question(collection, question: str, n_results: int = 5):
     llm = get_llm()
     parser = StrOutputParser()
 
-    # 3. LCEL chain: prompt -> llm -> parser
+    # 3. LCEL chain
     chain = prompt | llm | parser
 
     # 4. Generate answer
