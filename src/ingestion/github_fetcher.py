@@ -7,13 +7,16 @@ load_dotenv()
 # File extensions we care about (skip binaries, images, etc.)
 ALLOWED_EXTENSIONS = {'.py', '.js', '.jsx', '.ts', '.tsx', '.css', '.html', '.json', '.md'}
 
-def fetch_repo_files(repo_full_name: str):
+# Dirs that blow up recursive API calls with no useful content — skip entirely
+EXCLUDED_DIRS = {'node_modules', '.git', '.next', 'dist', 'build', '__pycache__', 'venv', '.venv'}
+
+def fetch_repo_files(repo_full_name: str, github_token: str = None):
     """
     Fetches all relevant code files from a GitHub repo.
     repo_full_name: e.g. 'username/reponame'
     Returns: list of dicts with {path, content}
     """
-    token = os.getenv("GITHUB_TOKEN")
+    token = github_token or os.getenv("GITHUB_TOKEN")
     g = Github(token)
     repo = g.get_repo(repo_full_name)
 
@@ -23,6 +26,8 @@ def fetch_repo_files(repo_full_name: str):
     while contents:
         file_item = contents.pop(0)
         if file_item.type == "dir":
+            if file_item.name in EXCLUDED_DIRS:
+                continue
             contents.extend(repo.get_contents(file_item.path))
         else:
             ext = os.path.splitext(file_item.name)[1]
