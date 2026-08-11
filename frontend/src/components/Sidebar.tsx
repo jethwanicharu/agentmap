@@ -1,4 +1,27 @@
 "use client";
+import { useEffect, useState } from "react";
+
+const INDEXING_MESSAGES = [
+  "Fetching repository files…",
+  "Splitting into chunks…",
+  "Generating embeddings…",
+  "Storing in vector DB…",
+  "Almost there…",
+];
+
+function useStepProgress(steps: string[], active: boolean, intervalMs = 1800) {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (!active) { setIndex(0); return; }
+    const id = setInterval(() => {
+      setIndex((i) => (i < steps.length - 1 ? i + 1 : i));
+    }, intervalMs);
+    return () => clearInterval(id);
+  }, [active, steps.length, intervalMs]);
+
+  return index;
+}
 
 export type IndexStatus = "idle" | "indexing" | "ready" | "error";
 
@@ -26,6 +49,7 @@ export default function Sidebar({
   errorMessage,
 }: SidebarProps) {
   const isIndexing = status === "indexing";
+  const currentStep = useStepProgress(INDEXING_MESSAGES, isIndexing);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -59,13 +83,13 @@ export default function Sidebar({
           className="btn-primary"
           disabled={isIndexing || !repoInput.trim()}
         >
-          {isIndexing ? (
-            <>
-              <Spinner /> Indexing…
-            </>
-          ) : (
-            "Index repository"
-          )}
+         {isIndexing ? (
+  <>
+    <Spinner /> Indexing…
+  </>
+) : (
+  "Index repository"
+)}
         </button>
       </form>
 
@@ -73,6 +97,9 @@ export default function Sidebar({
         status={status}
         indexedRepoLabel={indexedRepoLabel}
       />
+      {(isIndexing || status === "ready") && (
+  <IndexTimeline steps={INDEXING_MESSAGES} currentStep={currentStep} isReady={status === "ready"} />
+)}
 
       {status === "error" && errorMessage && (
         <p className="status-error-text">{errorMessage}</p>
@@ -145,6 +172,49 @@ function Spinner() {
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.35)" strokeWidth="3" />
       <path d="M21 12a9 9 0 0 0-9-9" stroke="#fff" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IndexTimeline({
+  steps,
+  currentStep,
+  isReady,
+}: {
+  steps: string[];
+  currentStep: number;
+  isReady: boolean;
+}) {
+  return (
+    <div className="index-timeline">
+      {steps.map((step, i) => {
+        const done = isReady || i < currentStep;
+        const active = !isReady && i === currentStep;
+        return (
+          <div
+            key={step}
+            className={`timeline-step${done ? " done" : ""}${active ? " active" : ""}`}
+          >
+            <span className={`timeline-check${done ? " done" : ""}`}>
+              <CheckIcon />
+            </span>
+            {step}
+          </div>
+        );
+      })}
+      {isReady && (
+        <div className="timeline-start-badge">
+          <span className="status-dot ready" /> Start
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M5 13l4 4L19 7" stroke="#0a0f0a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

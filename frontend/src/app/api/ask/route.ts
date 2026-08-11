@@ -8,7 +8,10 @@ export async function POST(req: NextRequest) {
   const res = await fetch(`${API_URL}/ask`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question: body.question }),
+    body: JSON.stringify({
+      repo_name: body.repo,
+      question: body.question,
+    }),
   });
 
   const data = await res.json();
