@@ -15,6 +15,46 @@ class AgentState(TypedDict):
     answer: str
 
 
+# ← NEW: File/folder keywords detect karo
+def is_file_tree_question(question: str) -> bool:
+    keywords = [
+        "files", "folders", "directory", "structure",
+        "how many files", "list files", "kaun si files",
+        "folder", "tree", "sab files", "kitni files"
+    ]
+    return any(k in question.lower() for k in keywords)
+
+
+# ← NEW: ChromaDB se saare paths nikalo aur tree banao
+def file_tree_node(state: AgentState) -> AgentState:
+    all_data = state["collection"].get()
+    paths = sorted(set(
+        meta["path"] for meta in all_data["metadatas"]
+    ))
+
+    # Tree structure banao
+    tree = {}
+    for path in paths:
+        parts = path.replace("\\", "/").split("/")
+        current = tree
+        for part in parts:
+            current = current.setdefault(part, {})
+
+    # Tree render karo
+    def render_tree(node, indent=0):
+        lines = []
+        for key, children in sorted(node.items()):
+            prefix = "  " * indent + ("📁 " if children else "📄 ")
+            lines.append(f"{prefix}{key}")
+            lines.extend(render_tree(children, indent + 1))
+        return lines
+
+    tree_str = "\n".join(render_tree(tree))
+    answer = f"**Total files: {len(paths)}**\n\n```\n{tree_str}\n```"
+
+    return {**state, "answer": answer, "sources": paths}
+
+
 def retrieve_node(state: AgentState) -> AgentState:
     """Retriever Agent: pulls relevant code chunks from ChromaDB."""
     query_results = state["collection"].query(
@@ -36,13 +76,33 @@ def generate_node(state: AgentState) -> AgentState:
     return {**state, "answer": answer}
 
 
+# ← NEW: Router function
+def route_question(state: AgentState) -> str:
+    if is_file_tree_question(state["question"]):
+        return "file_tree"
+    return "retrieve"
+
+
 def build_graph():
     graph = StateGraph(AgentState)
+
+    graph.add_node("file_tree", file_tree_node)  # ← NEW
     graph.add_node("retrieve", retrieve_node)
     graph.add_node("generate", generate_node)
-    graph.set_entry_point("retrieve")
+
+    # ← NEW: Conditional entry point
+    graph.set_conditional_entry_point(
+        route_question,
+        {
+            "file_tree": "file_tree",
+            "retrieve": "retrieve"
+        }
+    )
+
+    graph.add_edge("file_tree", END)             # ← NEW
     graph.add_edge("retrieve", "generate")
     graph.add_edge("generate", END)
+
     return graph.compile()
 
 
@@ -57,8 +117,6 @@ def get_graph():
 
 
 def run_agent(collection, question: str, n_results: int = 5) -> Dict[str, Any]:
-    """Public entrypoint — same signature/return shape as old ask_question(),
-    so Streamlit UI needs almost no change."""
     graph = get_graph()
     result = graph.invoke({
         "question": question,

@@ -9,6 +9,17 @@ const INDEXING_MESSAGES = [
   "Almost there…",
 ];
 
+const STORAGE_KEY = "agentmap_repo_input";
+const REPO_STORAGE_KEY = "agentmap_repo_input";
+const INDEX_CACHE_KEY = "agentmap_index_cache";
+
+interface IndexCache {
+  repo: string;
+  files: number;
+  chunks: number;
+}
+
+
 function useStepProgress(steps: string[], active: boolean, intervalMs = 1800) {
   const [index, setIndex] = useState(0);
 
@@ -23,21 +34,33 @@ function useStepProgress(steps: string[], active: boolean, intervalMs = 1800) {
   return index;
 }
 
+
 export type IndexStatus = "idle" | "indexing" | "ready" | "error";
 
 export interface SidebarProps {
-  /** Current value of the repo url / owner/repo input */
   repoInput: string;
-  /** Called on every keystroke in the repo input */
   onRepoInputChange: (value: string) => void;
-  /** Called when the user submits the "Index repository" form */
   onIndex: () => void;
-  /** Current lifecycle state of the indexing job */
   status: IndexStatus;
-  /** e.g. "jethawanchanu/charr-portfolio" — shown once status is "ready" */
   indexedRepoLabel?: string;
-  /** Shown when status is "error" */
   errorMessage?: string;
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+function parseErrorMessage(err: unknown): string {
+  if (!err) return "Something went wrong";
+  if (typeof err === "string") return err;
+  if (typeof err === "object") {
+    const e = err as Record<string, unknown>;
+    if (typeof e.message === "string") return e.message;
+    if (typeof e.detail === "string") return e.detail;
+    if (typeof e.detail === "object" && e.detail !== null) {
+      const d = e.detail as Record<string, unknown>;
+      if (typeof d.message === "string") return d.message;
+    }
+  }
+  return "Something went wrong";
 }
 
 export default function Sidebar({
@@ -47,9 +70,22 @@ export default function Sidebar({
   status,
   indexedRepoLabel,
   errorMessage,
+  isOpen = false,
+  onClose,
 }: SidebarProps) {
   const isIndexing = status === "indexing";
   const currentStep = useStepProgress(INDEXING_MESSAGES, isIndexing);
+
+  // Load saved repo URL on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved && !repoInput) onRepoInputChange(saved);
+  }, []);
+
+  // Save repo URL on change
+  useEffect(() => {
+    if (repoInput) localStorage.setItem(STORAGE_KEY, repoInput);
+  }, [repoInput]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -57,8 +93,46 @@ export default function Sidebar({
     onIndex();
   }
 
+  function CloseIcon() {
+    return (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M6 6l12 12M6 18L18 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  function ResetIcon() {
   return (
-    <aside className="sidebar">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M3 12a9 9 0 1 1 2.64 6.36M3 12V6m0 6h6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+  function handleReset() {
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem("agentmap_index_cache");
+  onRepoInputChange("");
+}
+
+  const displayError = parseErrorMessage(errorMessage);
+
+  return (
+      <aside className={`sidebar${isOpen ? " sidebar-open" : ""}`}>
+      <button
+        type="button"
+        className="sidebar-close-btn"
+        onClick={onClose}
+        aria-label="Close sidebar"
+      >
+        <CloseIcon />
+      </button>
       <h2 className="sidebar-title">Index a repository</h2>
       <p className="sidebar-desc">
         Point AgentMap at any GitHub repo to start asking questions about it.
@@ -76,6 +150,17 @@ export default function Sidebar({
             onChange={(e) => onRepoInputChange(e.target.value)}
             aria-label="Repository owner and name"
           />
+          {repoInput && !isIndexing && (
+            <button
+              type="button"
+              className="url-reset-btn"
+              onClick={handleReset}
+              aria-label="Clear repository URL"
+              title="Clear URL"
+            >
+              <ResetIcon />
+            </button>
+          )}
         </div>
 
         <button
@@ -83,26 +168,28 @@ export default function Sidebar({
           className="btn-primary"
           disabled={isIndexing || !repoInput.trim()}
         >
-         {isIndexing ? (
-  <>
-    <Spinner /> Indexing…
-  </>
-) : (
-  "Index repository"
-)}
+          {isIndexing ? (
+            <>
+              <Spinner /> Indexing…
+            </>
+          ) : (
+            "Index repository"
+          )}
         </button>
       </form>
 
-      <StatusLine
-        status={status}
-        indexedRepoLabel={indexedRepoLabel}
-      />
-      {(isIndexing || status === "ready") && (
-  <IndexTimeline steps={INDEXING_MESSAGES} currentStep={currentStep} isReady={status === "ready"} />
-)}
+      <StatusLine status={status} indexedRepoLabel={indexedRepoLabel} />
 
-      {status === "error" && errorMessage && (
-        <p className="status-error-text">{errorMessage}</p>
+      {(isIndexing || status === "ready") && (
+        <IndexTimeline
+          steps={INDEXING_MESSAGES}
+          currentStep={currentStep}
+          isReady={status === "ready"}
+        />
+      )}
+
+      {status === "error" && displayError && (
+        <p className="status-error-text">{displayError}</p>
       )}
 
       <hr className="sidebar-divider" />

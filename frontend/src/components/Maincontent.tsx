@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import StatsCards from "./Statscards";
 
+const CHAT_STORAGE_KEY = "agentmap_chat_history";
+
 export interface AskResult {
   answer: string;
   /** e.g. ["src/components/ui/Button.tsx", "src/app/page.tsx"] */
@@ -29,6 +31,7 @@ export interface MainContentProps {
   statsLoading?: boolean;
   /** A suggested question shown next to the top search field */
   suggestedQuestion?: string;
+  onResetChat?: () => void; 
 }
 
 export default function MainContent({
@@ -39,15 +42,33 @@ export default function MainContent({
   questionsAsked,
   statsLoading = false,
   suggestedQuestion = "how many buttons do we have in this codebase",
+  onResetChat, 
 }: MainContentProps) {
   const [searchValue, setSearchValue] = useState("");
   const [askValue, setAskValue] = useState("");
-  const [messages, setMessages] = useState<QAMessage[]>([]);
   const feedEndRef = useRef<HTMLDivElement>(null);
+
+  const [messages, setMessages] = useState<QAMessage[]>(() => {
+  if (typeof window === "undefined") return [];
+  try {
+    const saved = localStorage.getItem(CHAT_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+});
 
   useEffect(() => {
     feedEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+  try {
+    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
+  } catch {
+    // storage full ya blocked — silently ignore
+  }
+}, [messages]);
 
   async function submitQuestion(question: string) {
     const trimmed = question.trim();
@@ -92,6 +113,13 @@ export default function MainContent({
     setMessages((prev) => prev.filter((m) => m.id !== message.id));
     submitQuestion(message.question);
   }
+  function resetChat() {
+  setMessages([]);
+  try {
+    localStorage.removeItem(CHAT_STORAGE_KEY);
+  } catch {}
+  onResetChat?.();
+}
 
   function handleAskSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -151,6 +179,21 @@ export default function MainContent({
               : "Index a repository from the sidebar to start asking questions."}
           </div>
         )}
+
+        {messages.length > 0 && (
+  <div className="chat-reset-row">
+    <button
+      type="button"
+      className="chat-reset-btn"
+      onClick={resetChat}
+      title="Clear chat"
+      aria-label="Clear chat history"
+    >
+      <ResetIcon />
+      Clear chat
+    </button>
+  </div>
+)}
 
         {messages.map((message) => (
           <QABlock key={message.id} message={message} onRetry={() => retry(message)} />
@@ -278,6 +321,20 @@ function ArrowIcon() {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M4 12h16M13 5l7 7-7 7"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function ResetIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M3 12a9 9 0 1 1 2.64 6.36M3 12V6m0 6h6"
         stroke="currentColor"
         strokeWidth="2"
         strokeLinecap="round"

@@ -19,15 +19,11 @@ Answer:"""
 
 
 def get_llm():
-    """
-    Initializes the Groq LLM.
-    """
     return ChatGroq(
-        model="llama-3.3-70b-versatile",
-        temperature=0,  # deterministic answers — important for a code-context tool
+        model="openai/gpt-oss-120b",  # ✅ 
+        temperature=0,
         groq_api_key=os.getenv("GROQ_API_KEY")
     )
-
 
 def format_context(query_results: dict) -> str:
     """
