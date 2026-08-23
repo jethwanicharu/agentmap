@@ -61,17 +61,18 @@ export default function Page() {
     setStatus("indexing");
     setErrorMessage(undefined);
     try {
-      const res = await fetch("/api/index", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/index`, {
         method: "POST",
-        body: JSON.stringify({ repo: repoInput }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ repo_name: repoInput }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.detail || err.message || "Indexing failed");
       }
-      const data = await res.json();
-      const files = data.filesIndexed ?? data.files_indexed ?? 0;
-      const chunks = data.chunksCreated ?? data.chunks_created ?? 0;
+      const raw = await res.json();
+      const files = raw.file_count ?? 0;
+      const chunks = raw.chunk_count ?? 0;
 
       setStats({ files, chunks, questions: 0 });
       setStatus("ready");
@@ -87,15 +88,16 @@ export default function Page() {
     }
   }
 
-  async function handleAsk(question: string): Promise<AskResult> {
-    const res = await fetch("/api/ask", {
+async function handleAsk(question: string): Promise<AskResult> {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ask`, {
       method: "POST",
-      body: JSON.stringify({ question, repo: repoInput }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ repo_name: repoInput, question }),
     });
     if (!res.ok) throw new Error("Couldn't reach the backend");
-    const data = await res.json();
+    const raw = await res.json();
     setStats((s) => ({ ...s, questions: s.questions + 1 }));
-    return { answer: data.answer, sources: data.sources };
+    return { answer: raw.answer, sources: raw.sources ?? [] };
   }
 
   function handleRepoInputChange(value: string) {

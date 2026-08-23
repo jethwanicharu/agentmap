@@ -7,3 +7,6 @@ venv/
 chroma_db/
 node_modules/
 .next/
+frontend/out/
+.env.local
+.env.production

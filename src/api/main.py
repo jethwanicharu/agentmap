@@ -218,3 +218,27 @@ def ask_question(req: AskRequest):
         raise api_error("AGENT_ERROR", 500, f"Agent error: {e}")
 
     return result
+
+# ─── Static Frontend Serving (Next.js static export) ──────────────────────────
+
+import os
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+STATIC_DIR = "out"
+
+if os.path.isdir(STATIC_DIR):
+    app.mount("/_next", StaticFiles(directory=f"{STATIC_DIR}/_next"), name="next-static")
+
+    @app.get("/{full_path:path}")
+    async def serve_frontend(full_path: str):
+        file_path = os.path.join(STATIC_DIR, full_path)
+
+        if os.path.isfile(file_path):
+            return FileResponse(file_path)
+
+        index_path = os.path.join(STATIC_DIR, full_path, "index.html")
+        if os.path.isfile(index_path):
+            return FileResponse(index_path)
+
+        return FileResponse(os.path.join(STATIC_DIR, "index.html"))
