@@ -5,7 +5,7 @@ import chromadb
 # ─── Constants ───────────────────────────────────────────
 HF_API_KEY = os.getenv("HF_API_KEY")
 HF_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-HF_API_URL = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{HF_MODEL}"
+HF_API_URL = f"https://router.huggingface.co/hf-inference/models/{HF_MODEL}/pipeline/feature-extraction"
 
 CHROMA_PATH = os.getenv("CHROMA_PATH", "./chroma_db")
 
