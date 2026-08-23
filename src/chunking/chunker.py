@@ -1,45 +1,51 @@
-def chunk_file(file_path: str, content: str, chunk_size: int = 1000, overlap: int = 200):
-    """
-    Splits a single file's content into overlapping chunks.
-    Simple character-based chunking (upgrade to AST-based later).
-    
-    Returns: list of dicts with {path, chunk_text, chunk_index}
-    """
+def chunk_file(path: str, content: str, chunk_size: int = 1000, overlap: int = 200):
+    """Split a single file's content into overlapping character-based chunks."""
     chunks = []
     start = 0
-    chunk_index = 0
+    content_len = len(content)
 
-    while start < len(content):
+    if content_len == 0:
+        return chunks
+
+    while start < content_len:
         end = start + chunk_size
         chunk_text = content[start:end]
-
         chunks.append({
-            "path": file_path,
-            "chunk_text": chunk_text,
-            "chunk_index": chunk_index
+            "text": chunk_text,
+            "metadata": {
+                "path": path,
+                "start": start,
+                "end": min(end, content_len),
+            }
         })
-
-        chunk_index += 1
-        start = end - overlap  # overlap so we don't lose context at boundaries
+        start += (chunk_size - overlap)
 
     return chunks
 
 
 def chunk_all_files(files_data: list, chunk_size: int = 1000, overlap: int = 200):
-    """
-    files_data: list of {path, content} from github_fetcher
-    Returns: flat list of all chunks across all files
-    """
+    import psutil, os
+    def log_memory(step):
+        mem_mb = psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024
+        print(f"[MEMORY] {step}: {mem_mb:.2f} MB")
+    log_memory("Before chunking")
     all_chunks = []
     for file in files_data:
         file_chunks = chunk_file(file["path"], file["content"], chunk_size, overlap)
         all_chunks.extend(file_chunks)
+    log_memory(f"After chunking ({len(all_chunks)} total chunks)")
     return all_chunks
 
+def chunk_all_files(files_data: list, chunk_size: int = 1000, overlap: int = 200):
+    import psutil, os
+    def log_memory(step):
+        mem_mb = psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024
+        print(f"[MEMORY] {step}: {mem_mb:.2f} MB")
 
-if __name__ == "__main__":
-    # quick test with dummy content
-    dummy_content = "def hello():\n    print('hello world')\n" * 50
-    chunks = chunk_file("test.py", dummy_content)
-    print(f"Created {len(chunks)} chunks")
-    print(chunks[0])
+    log_memory("Before chunking")
+    all_chunks = []
+    for file in files_data:
+        file_chunks = chunk_file(file["path"], file["content"], chunk_size, overlap)
+        all_chunks.extend(file_chunks)
+    log_memory(f"After chunking ({len(all_chunks)} total chunks)")
+    return all_chunks

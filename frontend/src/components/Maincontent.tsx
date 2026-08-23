@@ -48,15 +48,14 @@ export default function MainContent({
   const [askValue, setAskValue] = useState("");
   const feedEndRef = useRef<HTMLDivElement>(null);
 
-  const [messages, setMessages] = useState<QAMessage[]>(() => {
-  if (typeof window === "undefined") return [];
+ const [messages, setMessages] = useState<QAMessage[]>([]);
+
+ useEffect(() => {
   try {
     const saved = localStorage.getItem(CHAT_STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
-  } catch {
-    return [];
-  }
-});
+    if (saved) setMessages(JSON.parse(saved));
+  } catch {}
+}, []); 
 
   useEffect(() => {
     feedEndRef.current?.scrollIntoView({ behavior: "smooth" });
