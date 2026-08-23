@@ -9,4 +9,5 @@ pygithub
 python-dotenv
 fastapi
 uvicorn
+psutil
 requests
