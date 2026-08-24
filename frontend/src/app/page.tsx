@@ -135,6 +135,22 @@ export default function Page() {
         chunksCreated={stats.chunks}
         questionsAsked={stats.questions}
       />
+      <div style={{
+        position: "fixed",
+        zIndex: 50,
+        bottom: "12px",
+        right: "16px",
+        display: "flex",
+        alignItems: "center",
+        gap: "6px",
+        fontSize: "12px",
+        color: "rgba(255,255,255,0.4)",
+        fontFamily: "monospace",
+        pointerEvents: "none"
+      }}>
+        <span style={{ color: "rgba(139,92,246,0.6)" }}>{"</>"}</span>
+        Built by Charu
+      </div>
     </div>
   );
 }

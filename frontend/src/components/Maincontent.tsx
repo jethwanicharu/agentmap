@@ -135,7 +135,7 @@ export default function MainContent({
       <header className="main-header">
         <h1 className="main-title">AgentMap</h1>
         <p className="main-subtitle">
-          Multi-agent RAG assistant for code, text, and consistency checks
+          A LangGraph multi-agent system that indexes any GitHub repo and answers questions with grounded, cited sources
         </p>
       </header>
 

@@ -135,7 +135,7 @@ export default function Sidebar({
       </button>
       <h2 className="sidebar-title">Index a repository</h2>
       <p className="sidebar-desc">
-        Point AgentMap at any GitHub repo to start asking questions about it.
+        Point it at a GitHub repo URL.<br />Ask anything about the codebase.
       </p>
 
       <form className="sidebar-form" onSubmit={handleSubmit}>
@@ -197,9 +197,7 @@ export default function Sidebar({
       <div>
         <div className="sidebar-about-title">About</div>
         <p className="sidebar-about-text">
-          AgentMap indexes a codebase and answers questions with grounded,
-          cited sources — built for the pain of inheriting an unfamiliar
-          codebase under time pressure.
+          AgentMap runs a multi agent LangGraph pipeline. A router directs each query to either a Retriever Agent, which performs semantic search over the codebase, or a dedicated file structure agent for repo level questions. An Answer Agent then generates a grounded, source cited response. Built to solve the real pain of inheriting an unfamiliar codebase under time pressure.
         </p>
       </div>
     </aside>
