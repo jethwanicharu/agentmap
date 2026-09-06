@@ -212,7 +212,8 @@ resumes its state after a page refresh instead of resetting.
 pip install -r requirements.txt
 
 # .env
-GROQ_API_KEY=...
+GROQ_API_KEY=...        # LLM inference (Answer Agent)
+HF_API_KEY=...          # HuggingFace embeddings (vector store)
 GITHUB_TOKEN=...        # optional — needed for private repos / higher rate limits
 
 uvicorn src.api.main:app --reload
