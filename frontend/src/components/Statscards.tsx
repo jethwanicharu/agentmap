@@ -1,3 +1,4 @@
+"use client";
 import { useEffect, useRef, useState } from "react";
 
 function useCountUp(target: number, duration = 900) {
@@ -20,7 +21,7 @@ function useCountUp(target: number, duration = 900) {
   }, [target]);
 
   return display;
-}                                          // ← useCountUp yahan band
+}                                         
 
 function StatCard({ label, value, loading }: { label: string; value: number; loading: boolean }) {
   const animated = useCountUp(value);
@@ -34,7 +35,7 @@ function StatCard({ label, value, loading }: { label: string; value: number; loa
       <div className="stat-label">{label}</div>
     </div>
   );
-}                                          // ← StatCard yahan band
+}                                         
 
 export interface StatsCardsProps {
   filesIndexed: number;

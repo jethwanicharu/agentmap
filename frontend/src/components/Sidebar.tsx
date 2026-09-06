@@ -10,7 +10,7 @@ const INDEXING_MESSAGES = [
 ];
 
 const STORAGE_KEY = "agentmap_repo_input";
-const REPO_STORAGE_KEY = "agentmap_repo_input";
+// const REPO_STORAGE_KEY = "agentmap_repo_input";
 const INDEX_CACHE_KEY = "agentmap_index_cache";
 
 interface IndexCache {
@@ -76,7 +76,7 @@ export default function Sidebar({
   const isIndexing = status === "indexing";
   const currentStep = useStepProgress(INDEXING_MESSAGES, isIndexing);
 
-  // Load saved repo URL on mount
+  
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved && !repoInput) onRepoInputChange(saved);

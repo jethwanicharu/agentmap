@@ -20,7 +20,7 @@ Answer:"""
 
 def get_llm():
     return ChatGroq(
-        model="openai/gpt-oss-120b",  # ✅ 
+        model="openai/gpt-oss-120b",  
         temperature=0,
         groq_api_key=os.getenv("GROQ_API_KEY")
     )
@@ -44,22 +44,22 @@ def ask_question(collection, question: str, n_results: int = 5):
     """
     Full RAG pipeline: retrieve relevant chunks -> build prompt -> call LLM -> return answer + sources.
     """
-    # 1. Retrieve
+    #  Retrieve
     query_results = collection.query(query_texts=[question], n_results=n_results)
     context = format_context(query_results)
 
-    # 2. Build prompt
+    # Build prompt
     prompt = ChatPromptTemplate.from_template(RAG_PROMPT_TEMPLATE)
     llm = get_llm()
     parser = StrOutputParser()
 
-    # 3. LCEL chain
+    # LCEL chain
     chain = prompt | llm | parser
 
-    # 4. Generate answer
+    # Generate answer
     answer = chain.invoke({"context": context, "question": question})
 
-    # 5. Extract unique source files for citation
+    #  Extract unique source files for citation
     sources = list(set(meta["path"] for meta in query_results["metadatas"][0]))
 
     return {
@@ -68,12 +68,12 @@ def ask_question(collection, question: str, n_results: int = 5):
     }
 
 
-if __name__ == "__main__":
-    from src.embeddings.vector_store import get_chroma_client, get_or_create_collection
+# if __name__ == "__main__":
+#     from src.embeddings.vector_store import get_chroma_client, get_or_create_collection
 
-    client = get_chroma_client()
-    collection = get_or_create_collection(client)
+#     client = get_chroma_client()
+#     collection = get_or_create_collection(client)
 
-    result = ask_question(collection, "how do I sum a list of numbers?")
-    print("Answer:", result["answer"])
-    print("Sources:", result["sources"])
+#     result = ask_question(collection, "how do I sum a list of numbers?")
+#     print("Answer:", result["answer"])
+#     print("Sources:", result["sources"])

@@ -7,7 +7,6 @@ const CHAT_STORAGE_KEY = "agentmap_chat_history";
 
 export interface AskResult {
   answer: string;
-  /** e.g. ["src/components/ui/Button.tsx", "src/app/page.tsx"] */
   sources?: string[];
 }
 
@@ -21,15 +20,13 @@ interface QAMessage {
 }
 
 export interface MainContentProps {
-  /** Called with the user's question; resolve with the answer or throw/reject on failure */
   onAsk: (question: string) => Promise<AskResult>;
-  /** Whether a repo has been indexed yet — gates the ask bar */
   isReady: boolean;
   filesIndexed: number;
   chunksCreated: number;
   questionsAsked: number;
   statsLoading?: boolean;
-  /** A suggested question shown next to the top search field */
+ 
   suggestedQuestion?: string;
   onResetChat?: () => void; 
 }
@@ -65,7 +62,7 @@ export default function MainContent({
   try {
     localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
   } catch {
-    // storage full ya blocked — silently ignore
+    
   }
 }, [messages]);
 
@@ -296,8 +293,6 @@ function QABlock({
   );
 }
 
-/** Groups a flat source list into rows of `size` for the pill display —
- *  e.g. ["a.tsx","b.tsx","c.tsx"] with size 2 -> [["a.tsx","b.tsx"],["c.tsx"]] */
 function chunk<T>(items: T[], size: number): T[][] {
   const rows: T[][] = [];
   for (let i = 0; i < items.length; i += size) {

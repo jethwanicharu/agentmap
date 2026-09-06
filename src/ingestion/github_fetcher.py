@@ -4,10 +4,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# File extensions we care about (skip binaries, images, etc.)
-ALLOWED_EXTENSIONS = {'.py', '.js', '.jsx', '.ts', '.tsx', '.css', '.html', '.json', '.md'}
 
-# Dirs that blow up recursive API calls with no useful content — skip entirely
+ALLOWED_EXTENSIONS = {'.py', '.js', '.jsx', '.ts', '.tsx', '.css', '.html', '.json', '.md'}
 EXCLUDED_DIRS = {'node_modules', '.git', '.next', 'dist', 'build', '__pycache__', 'venv', '.venv'}
 
 def fetch_repo_files(repo_full_name: str, github_token: str = None):
@@ -38,15 +36,15 @@ def fetch_repo_files(repo_full_name: str, github_token: str = None):
                         "path": file_item.path,
                         "content": content
                     })
-                except Exception as e:
-                    print(f"Skipping {file_item.path}: {e}")
+                except Exception:
+                    pass
 
     return files_data
 
 
-if __name__ == "__main__":
-    # quick test
-    files = fetch_repo_files("your-username/your-test-repo")
-    print(f"Fetched {len(files)} files")
-    for f in files[:3]:
-        print(f["path"])
+# if __name__ == "__main__":
+#     # quick test
+#     files = fetch_repo_files("your-username/your-test-repo")
+#     print(f"Fetched {len(files)} files")
+#     for f in files[:3]:
+#         print(f["path"])

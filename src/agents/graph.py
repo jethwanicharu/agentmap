@@ -15,7 +15,7 @@ class AgentState(TypedDict):
     answer: str
 
 
-# ← NEW: File/folder keywords detect karo
+#  File/folder keywords detect karo
 def is_file_tree_question(question: str) -> bool:
     keywords = [
         "files", "folders", "directory", "structure",
@@ -25,14 +25,13 @@ def is_file_tree_question(question: str) -> bool:
     return any(k in question.lower() for k in keywords)
 
 
-# ← NEW: ChromaDB se saare paths nikalo aur tree banao
 def file_tree_node(state: AgentState) -> AgentState:
     all_data = state["collection"].get()
     paths = sorted(set(
         meta["path"] for meta in all_data["metadatas"]
     ))
 
-    # Tree structure banao
+    # Tree structure
     tree = {}
     for path in paths:
         parts = path.replace("\\", "/").split("/")
@@ -40,7 +39,7 @@ def file_tree_node(state: AgentState) -> AgentState:
         for part in parts:
             current = current.setdefault(part, {})
 
-    # Tree render karo
+   
     def render_tree(node, indent=0):
         lines = []
         for key, children in sorted(node.items()):
@@ -76,7 +75,7 @@ def generate_node(state: AgentState) -> AgentState:
     return {**state, "answer": answer}
 
 
-# ← NEW: Router function
+#  Router function
 def route_question(state: AgentState) -> str:
     if is_file_tree_question(state["question"]):
         return "file_tree"
@@ -86,11 +85,11 @@ def route_question(state: AgentState) -> str:
 def build_graph():
     graph = StateGraph(AgentState)
 
-    graph.add_node("file_tree", file_tree_node)  # ← NEW
+    graph.add_node("file_tree", file_tree_node) 
     graph.add_node("retrieve", retrieve_node)
     graph.add_node("generate", generate_node)
 
-    # ← NEW: Conditional entry point
+    # Conditional entry 
     graph.set_conditional_entry_point(
         route_question,
         {
@@ -99,7 +98,7 @@ def build_graph():
         }
     )
 
-    graph.add_edge("file_tree", END)             # ← NEW
+    graph.add_edge("file_tree", END)           
     graph.add_edge("retrieve", "generate")
     graph.add_edge("generate", END)
 

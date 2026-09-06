@@ -912,7 +912,7 @@ input {
   }
 }
 
-/* ---------- ≤1020px ---------- */
+
 @media (max-width: 1020px) {
   .sidebar {
     width: 270px;
@@ -946,13 +946,13 @@ input {
   }
 }
 
-/* ---------- ≤768px ---------- */
+
 @media (max-width: 768px) {
   .app-shell {
     flex-direction: column;
   }
 
-  /* Sidebar ab slide-in drawer hai, static nahi */
+  
   .sidebar {
     position: fixed;
     top: 0;
@@ -1034,7 +1034,7 @@ input {
 
   .main-content {
     margin-left: 0;
-    padding: 70px 18px 130px; /* top padding hamburger ke liye */
+    padding: 70px 18px 130px; 
     align-items: stretch;
   }
 
@@ -1078,7 +1078,7 @@ input {
   }
 }
 
-/* ---------- ≤436px ---------- */
+
 @media (max-width: 436px) {
   .main-content {
     padding: 60px 12px 120px;
