@@ -23,7 +23,7 @@ app.add_middleware(
 _chroma_client = get_chroma_client()
 
 
-# ─── Custom Error Codes ────────────────────────────────────────────────────────
+
 
 ERROR_CODES = {
     "INVALID_REPO_FORMAT":  "Repo must be in 'owner/repo' format (e.g. 'vercel/next.js')",
@@ -51,7 +51,7 @@ def api_error(code: str, status: int, detail: str = None) -> HTTPException:
     )
 
 
-# ─── Request Models ────────────────────────────────────────────────────────────
+
 
 class IndexRequest(BaseModel):
     repo_name: str
@@ -66,7 +66,6 @@ class IndexRequest(BaseModel):
         parts = v.split("/")
         if len(parts) != 2 or not parts[0] or not parts[1]:
             raise ValueError("INVALID_REPO_FORMAT")
-        # GitHub allows alphanumeric, hyphens, underscores, dots
         pattern = r'^[a-zA-Z0-9_.\-]+/[a-zA-Z0-9_.\-]+$'
         if not re.match(pattern, v):
             raise ValueError("INVALID_REPO_NAME")
@@ -86,7 +85,7 @@ class AskRequest(BaseModel):
         return v.strip()
 
 
-# ─── Validation Error Handler ──────────────────────────────────────────────────
+
 
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
@@ -97,7 +96,6 @@ async def generic_exception_handler(request: Request, exc: Exception):
     )
 
 
-# ─── GitHub Error Parser ───────────────────────────────────────────────────────
 
 def parse_github_error(exc: Exception, token: str = None) -> HTTPException:
     """
@@ -106,15 +104,14 @@ def parse_github_error(exc: Exception, token: str = None) -> HTTPException:
     """
     err_str = str(exc).lower()
 
-    # Network / DNS failures
     if any(k in err_str for k in ["connect", "timeout", "network", "name resolution", "unreachable"]):
         return api_error("GITHUB_UNREACHABLE", 503)
 
-    # 401 → Bad credentials
+   
     if "401" in err_str or "bad credentials" in err_str:
         return api_error("BAD_TOKEN", 401)
 
-    # 403 → Rate limit OR private repo (no token)
+    
     if "403" in err_str:
         if "rate limit" in err_str or "x-ratelimit" in err_str:
             return api_error("RATE_LIMITED", 429)
@@ -123,15 +120,15 @@ def parse_github_error(exc: Exception, token: str = None) -> HTTPException:
                 "This may be a private repo. Provide a GitHub token to access it.")
         return api_error("BAD_TOKEN", 403, "Access denied. Check your token's permissions.")
 
-    # 404 → Repo doesn't exist
+    
     if "404" in err_str or "not found" in err_str:
         return api_error("REPO_NOT_FOUND", 404)
 
-    # Fallback generic GitHub error
+    
     return api_error("GITHUB_UNREACHABLE", 502, f"GitHub error: {exc}")
 
 
-# ─── Routes ───────────────────────────────────────────────────────────────────
+
 
 @app.get("/health")
 def health():
@@ -140,7 +137,7 @@ def health():
 
 @app.post("/index")
 def index_repo(req: IndexRequest):
-    # 1. Fetch files from GitHub
+    #  Fetch files from GitHub
     try:
         files = fetch_repo_files(req.repo_name, github_token=req.github_token)
     except httpx.HTTPStatusError as e:
@@ -150,13 +147,13 @@ def index_repo(req: IndexRequest):
     except Exception as e:
         raise parse_github_error(e, req.github_token)
 
-    # 2. Empty repo guard
+    #  Empty repo guard
     if not files:
         raise api_error("EMPTY_REPO", 404,
             f"No supported files found in '{req.repo_name}'. "
             "Make sure the repo has code files (py, js, ts, etc.)")
 
-    # 3. Chunk files
+    # Chunk files
     try:
         chunks = chunk_all_files(files)
     except Exception as e:
@@ -166,7 +163,7 @@ def index_repo(req: IndexRequest):
         raise api_error("EMPTY_REPO", 404,
             "Files were found but could not be chunked. The repo may only contain binary files.")
 
-    # 4. Store in vector DB
+    #  Store in vector DB
     try:
         collection_name = req.repo_name.replace("/", "_")
         collection = get_or_create_collection(_chroma_client, collection_name=collection_name)
@@ -189,13 +186,13 @@ def index_repo(req: IndexRequest):
 
 @app.post("/ask")
 def ask_question(req: AskRequest):
-    # 1. Validate repo format (same as index)
+    
     if "/" not in req.repo_name:
         raise api_error("INVALID_REPO_FORMAT", 400)
 
     collection_name = req.repo_name.replace("/", "_")
 
-    # 2. Check if indexed
+   
     try:
         collection = get_or_create_collection(_chroma_client, collection_name=collection_name)
     except Exception as e:
@@ -211,7 +208,7 @@ def ask_question(req: AskRequest):
             "Submit this repo via /index before asking questions."
         )
 
-    # 3. Run agent
+    #  Run agent
     try:
         result = run_agent(collection, req.question, n_results=req.n_results)
     except Exception as e:
@@ -219,7 +216,7 @@ def ask_question(req: AskRequest):
 
     return result
 
-# ─── Static Frontend Serving (Next.js static export) ──────────────────────────
+
 
 import os
 from fastapi.staticfiles import StaticFiles

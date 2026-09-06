@@ -15,7 +15,7 @@ class AgentState(TypedDict):
     answer: str
 
 
-#  File/folder keywords detect karo
+
 def is_file_tree_question(question: str) -> bool:
     keywords = [
         "files", "folders", "directory", "structure",

@@ -40,11 +40,3 @@ def fetch_repo_files(repo_full_name: str, github_token: str = None):
                     pass
 
     return files_data
-
-
-# if __name__ == "__main__":
-#     # quick test
-#     files = fetch_repo_files("your-username/your-test-repo")
-#     print(f"Fetched {len(files)} files")
-#     for f in files[:3]:
-#         print(f["path"])

@@ -67,13 +67,3 @@ def ask_question(collection, question: str, n_results: int = 5):
         "sources": sources
     }
 
-
-# if __name__ == "__main__":
-#     from src.embeddings.vector_store import get_chroma_client, get_or_create_collection
-
-#     client = get_chroma_client()
-#     collection = get_or_create_collection(client)
-
-#     result = ask_question(collection, "how do I sum a list of numbers?")
-#     print("Answer:", result["answer"])
-#     print("Sources:", result["sources"])

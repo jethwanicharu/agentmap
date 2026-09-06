@@ -36,16 +36,3 @@ def chunk_all_files(files_data: list, chunk_size: int = 1000, overlap: int = 200
     log_memory(f"After chunking ({len(all_chunks)} total chunks)")
     return all_chunks
 
-# def chunk_all_files(files_data: list, chunk_size: int = 1000, overlap: int = 200):
-#     import psutil, os
-#     def log_memory(step):
-#         mem_mb = psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024
-#         print(f"[MEMORY] {step}: {mem_mb:.2f} MB")
-
-#     log_memory("Before chunking")
-#     all_chunks = []
-#     for file in files_data:
-#         file_chunks = chunk_file(file["path"], file["content"], chunk_size, overlap)
-#         all_chunks.extend(file_chunks)
-#     log_memory(f"After chunking ({len(all_chunks)} total chunks)")
-#     return all_chunks
