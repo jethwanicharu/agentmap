@@ -1,9 +1,11 @@
-from typing import TypedDict, List, Dict, Any
+from typing import List, Dict, Any
+from typing_extensions import TypedDict
 from langgraph.graph import StateGraph, END
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 from src.retrieval.rag_chain import get_llm, format_context, RAG_PROMPT_TEMPLATE
+from src.embeddings.vector_store import get_embeddings
 
 
 class AgentState(TypedDict):
@@ -56,8 +58,9 @@ def file_tree_node(state: AgentState) -> AgentState:
 
 def retrieve_node(state: AgentState) -> AgentState:
     """Retriever Agent: pulls relevant code chunks from ChromaDB."""
+    query_emb = get_embeddings([state["question"]])[0]
     query_results = state["collection"].query(
-        query_texts=[state["question"]],
+        query_embeddings=[query_emb],
         n_results=state.get("n_results", 5)
     )
     context = format_context(query_results)
@@ -83,7 +86,7 @@ def route_question(state: AgentState) -> str:
 
 
 def build_graph():
-    graph = StateGraph(AgentState)
+    graph = StateGraph(AgentState)  # type: ignore
 
     graph.add_node("file_tree", file_tree_node) 
     graph.add_node("retrieve", retrieve_node)

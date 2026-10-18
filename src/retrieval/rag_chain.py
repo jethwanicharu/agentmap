@@ -4,6 +4,8 @@ from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
+from src.embeddings.vector_store import get_embeddings
+
 load_dotenv()
 
 RAG_PROMPT_TEMPLATE = """You are a helpful assistant that answers questions about a codebase.
@@ -44,8 +46,8 @@ def ask_question(collection, question: str, n_results: int = 5):
     """
     Full RAG pipeline: retrieve relevant chunks -> build prompt -> call LLM -> return answer + sources.
     """
-    #  Retrieve
-    query_results = collection.query(query_texts=[question], n_results=n_results)
+    query_emb = get_embeddings([question])[0]
+    query_results = collection.query(query_embeddings=[query_emb], n_results=n_results)
     context = format_context(query_results)
 
     # Build prompt
