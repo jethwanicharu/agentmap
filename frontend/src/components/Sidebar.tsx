@@ -135,7 +135,7 @@ export default function Sidebar({
       </button>
       <h2 className="sidebar-title">Index a repository</h2>
       <p className="sidebar-desc">
-        Point it at a GitHub repo URL.<br />Ask anything about the codebase.
+        Ask anything about the codebase. <br />No setup, No install.<br />Answers only from your repo’s code.
       </p>
 
       <form className="sidebar-form" onSubmit={handleSubmit}>

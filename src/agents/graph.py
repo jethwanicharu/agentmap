@@ -20,7 +20,7 @@ class AgentState(TypedDict):
 
 def is_file_tree_question(question: str) -> bool:
     keywords = [
-        "files", "folders", "directory", "structure",
+        "files", "folders", "directory", "structure", "struct",
         "how many files", "list files", "kaun si files",
         "folder", "tree", "sab files", "kitni files"
     ]

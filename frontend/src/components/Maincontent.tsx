@@ -132,7 +132,7 @@ export default function MainContent({
       <header className="main-header">
         <h1 className="main-title">AgentMap</h1>
         <p className="main-subtitle">
-          A LangGraph multi-agent system that indexes any GitHub repo and answers questions with grounded, cited sources
+         Paste a GitHub repo URL and ask questions. Every answer is grounded in the repo and cited to the exact files.
         </p>
       </header>
 
@@ -272,7 +272,9 @@ function QABlock({
 
         {message.status === "done" && (
           <>
-            <p className="qa-answer-text">{message.answer}</p>
+            <div className="qa-answer-text">
+              <FormattedAnswer text={message.answer || ""} />
+            </div>
             {message.sources && message.sources.length > 0 && (
               <div className="source-chips">
                 {chunk(message.sources, 2).map((row, i) => (
@@ -289,6 +291,131 @@ function QABlock({
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+function renderInline(text: string): React.ReactNode[] {
+  const tokens = text.split(/(\*\*[^*]+\*\*|`[^`]+`|\*[^*\n]+\*)/g);
+  return tokens.map((token, idx) => {
+    if (token.startsWith("**") && token.endsWith("**") && token.length > 4) {
+      return <strong key={idx}>{renderInline(token.slice(2, -2))}</strong>;
+    }
+    if (token.startsWith("`") && token.endsWith("`") && token.length > 2) {
+      return (
+        <code key={idx} className="qa-inline-code">
+          {token.slice(1, -1)}
+        </code>
+      );
+    }
+    if (token.startsWith("*") && token.endsWith("*") && token.length > 2) {
+      return <em key={idx}>{renderInline(token.slice(1, -1))}</em>;
+    }
+    return token;
+  });
+}
+
+function FormattedAnswer({ text }: { text: string }) {
+  const segments = text.split(/(```[\s\S]*?```)/g);
+
+  return (
+    <div className="qa-markdown">
+      {segments.map((segment, segIdx) => {
+        if (segment.startsWith("```") && segment.endsWith("```")) {
+          const inner = segment.slice(3, -3);
+          const firstNewline = inner.indexOf("\n");
+          const code =
+            firstNewline !== -1 ? inner.slice(firstNewline + 1) : inner;
+          return (
+            <pre key={segIdx} className="qa-code-block">
+              <code>{code.replace(/\n$/, "")}</code>
+            </pre>
+          );
+        }
+
+        const lines = segment.split("\n");
+        const elements: React.ReactNode[] = [];
+        let listItems: { type: "ul" | "ol"; items: React.ReactNode[] } | null =
+          null;
+
+        const flushList = (keyPrefix: string) => {
+          if (!listItems) return;
+          if (listItems.type === "ul") {
+            elements.push(
+              <ul key={keyPrefix} className="qa-list">
+                {listItems.items.map((item, i) => (
+                  <li key={i}>{item}</li>
+                ))}
+              </ul>
+            );
+          } else {
+            elements.push(
+              <ol key={keyPrefix} className="qa-list qa-list-ordered">
+                {listItems.items.map((item, i) => (
+                  <li key={i}>{item}</li>
+                ))}
+              </ol>
+            );
+          }
+          listItems = null;
+        };
+
+        lines.forEach((rawLine, lineIdx) => {
+          const trimmed = rawLine.trim();
+
+          if (!trimmed) {
+            flushList(`list-${segIdx}-${lineIdx}`);
+            return;
+          }
+
+          if (/^(\*{3,}|-{3,}|_{3,})$/.test(trimmed)) {
+            flushList(`list-${segIdx}-${lineIdx}`);
+            elements.push(<hr key={`hr-${segIdx}-${lineIdx}`} className="qa-hr" />);
+            return;
+          }
+
+          const headingMatch = trimmed.match(/^(#{1,4})\s+(.*)$/);
+          if (headingMatch) {
+            flushList(`list-${segIdx}-${lineIdx}`);
+            elements.push(
+              <div key={`h-${segIdx}-${lineIdx}`} className="qa-heading">
+                {renderInline(headingMatch[2])}
+              </div>
+            );
+            return;
+          }
+
+          const ulMatch = trimmed.match(/^[-*•]\s+(.*)$/);
+          if (ulMatch) {
+            if (!listItems || listItems.type !== "ul") {
+              flushList(`list-${segIdx}-${lineIdx}`);
+              listItems = { type: "ul", items: [] };
+            }
+            listItems.items.push(renderInline(ulMatch[1]));
+            return;
+          }
+
+          const olMatch = trimmed.match(/^\d+\.\s+(.*)$/);
+          if (olMatch) {
+            if (!listItems || listItems.type !== "ol") {
+              flushList(`list-${segIdx}-${lineIdx}`);
+              listItems = { type: "ol", items: [] };
+            }
+            listItems.items.push(renderInline(olMatch[1]));
+            return;
+          }
+
+          flushList(`list-${segIdx}-${lineIdx}`);
+          elements.push(
+            <p key={`p-${segIdx}-${lineIdx}`} className="qa-paragraph">
+              {renderInline(trimmed)}
+            </p>
+          );
+        });
+
+        flushList(`list-end-${segIdx}`);
+        return <div key={segIdx} className="qa-segment">{elements}</div>;
+      })}
     </div>
   );
 }

@@ -12,6 +12,12 @@ RAG_PROMPT_TEMPLATE = """You are a helpful assistant that answers questions abou
 Use ONLY the following context (code snippets) to answer the question.
 If the context doesn't contain enough information, say so — don't make things up.
 
+Formatting guidelines:
+- Keep answers clear, direct, and easy to read.
+- Use simple bullet points or numbered steps when listing items.
+- Use inline backticks (`code`) for file names, functions, and endpoints, and fenced code blocks (```) for multi-line code or file trees.
+- Avoid excessive asterisks or deeply nested bullet formatting.
+
 Context:
 {context}
 
